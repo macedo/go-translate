@@ -5,13 +5,18 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 	"strings"
+
+	"gopkg.in/alecthomas/kingpin.v2"
 )
 
 const BASE_URI = "https://www.googleapis.com/language/translate/v2"
 
-var apiKey string
+var (
+	apiKey = kingpin.Flag("apiKey", "API Key.").OverrideDefaultFromEnvar("TRANSLATE_API_KEY").Short('k').String()
+	target = kingpin.Flag("target", "Target language.").Default("en").OverrideDefaultFromEnvar("DEFAULT_LANGUAGE").Short('t').String()
+	text   = kingpin.Arg("text", "Text to translate.").Required().Strings()
+)
 
 type A struct {
 	Data struct {
@@ -23,18 +28,11 @@ type A struct {
 }
 
 func init() {
-	apiKey = os.Getenv("TRANSLATE_API_KEY")
+	kingpin.Parse()
 }
 
 func main() {
-	if len(os.Args) < 3 {
-		log.Fatal("translate [target-language] [text]")
-	}
-
-	targetLanguage := os.Args[1]
-	text := strings.Join(os.Args[2:], "+")
-
-	res, err := http.Get(fmt.Sprintf("%s?q=%s&target=%s&key=%s", BASE_URI, text, targetLanguage, apiKey))
+	res, err := http.Get(fmt.Sprintf("%s?q=%s&target=%s&key=%s", BASE_URI, strings.Join(*text, "+"), *target, *apiKey))
 	if err != nil {
 		log.Fatal(err)
 	}
